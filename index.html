@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Launch Tracker 🚀</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <header>
+            <h1>🚀 Space Launch Tracker</h1>
+            <p class="subtitle">Upcoming rocket launches from around the world</p>
+        </header>
+        
+        <main>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Fetching launch data...</p>
+            </div>
+            
+            <div id="launches" class="launches-grid"></div>
+            
+            <div id="error" class="error" style="display: none;">
+                <p>⚠️ Unable to fetch launch data. Please try again later.</p>
+                <button onclick="fetchLaunches()">Retry</button>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Data provided by <a href="https://thespacedevs.com/" target="_blank">The Space Devs</a></p>
+            <p>Built with ❤️ for space enthusiasts</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
