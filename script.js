@@ -7,6 +7,8 @@ const API_URL = 'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=12&mod
 const launchesContainer = document.getElementById('launches');
 const loadingElement = document.getElementById('loading');
 const errorElement = document.getElementById('error');
+const providerFilter = document.getElementById('provider-filter');
+let allLaunches = [];
 
 // Fetch launches from API
 async function fetchLaunches() {
@@ -30,16 +32,35 @@ async function fetchLaunches() {
 // Display launches in the grid
 function displayLaunches(launches) {
     hideLoading();
+    allLaunches = launches;
+    
+    // Build provider filter options
+    const providers = [...new Set(launches.map(l => l.launch_service_provider?.name).filter(Boolean))];
+    providers.sort();
+    
+    providerFilter.innerHTML = '<option value="all">All Providers</option>';
+    providers.forEach(provider => {
+        const option = document.createElement('option');
+        option.value = provider;
+        option.textContent = provider;
+        providerFilter.appendChild(option);
+    });
+    
+    renderLaunches(launches);
+    
+    // Start countdown timers
+    updateCountdowns();
+    setInterval(updateCountdowns, 1000);
+}
+
+// Render launches to the grid
+function renderLaunches(launches) {
     launchesContainer.innerHTML = '';
     
     launches.forEach(launch => {
         const card = createLaunchCard(launch);
         launchesContainer.appendChild(card);
     });
-    
-    // Start countdown timers
-    updateCountdowns();
-    setInterval(updateCountdowns, 1000);
 }
 
 // Create a launch card element
@@ -186,6 +207,20 @@ function showError() {
     launchesContainer.style.display = 'none';
     errorElement.style.display = 'block';
 }
+
+// Filter event listener
+providerFilter.addEventListener('change', (e) => {
+    const selected = e.target.value;
+    
+    if (selected === 'all') {
+        renderLaunches(allLaunches);
+    } else {
+        const filtered = allLaunches.filter(
+            launch => launch.launch_service_provider?.name === selected
+        );
+        renderLaunches(filtered);
+    }
+});
 
 // Initialize
 document.addEventListener('DOMContentLoaded', fetchLaunches);
