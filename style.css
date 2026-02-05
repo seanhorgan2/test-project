@@ -296,3 +296,44 @@ footer p {
         font-size: 1.2rem;
     }
 }
+
+/* Filter dropdown */
+.filter-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-container label {
+    font-size: 1rem;
+    color: #a0a0c0;
+}
+
+#provider-filter {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+#provider-filter:hover {
+    border-color: #6495ED;
+}
+
+#provider-filter:focus {
+    outline: none;
+    border-color: #6495ED;
+    box-shadow: 0 0 10px rgba(100, 149, 237, 0.3);
+}
+
+#provider-filter option {
+    background: #1a1a3a;
+    color: #ffffff;
+}
