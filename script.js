@@ -49,12 +49,12 @@ function displayLaunches(launches) {
     
     renderLaunches(launches);
     
-    // Start countdown timers
-    updateCountdowns();
     // Clear any existing interval before starting a new one
     if (countdownIntervalId !== null) {
         clearInterval(countdownIntervalId);
     }
+    // Start countdown timers
+    updateCountdowns();
     countdownIntervalId = setInterval(updateCountdowns, 1000);
 }
 
