@@ -214,11 +214,13 @@ providerFilter.addEventListener('change', (e) => {
     
     if (selected === 'all') {
         renderLaunches(allLaunches);
+        updateCountdowns();
     } else {
         const filtered = allLaunches.filter(
             launch => launch.launch_service_provider?.name === selected
         );
         renderLaunches(filtered);
+        updateCountdowns();
     }
 });
 
