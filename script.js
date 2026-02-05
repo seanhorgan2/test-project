@@ -9,6 +9,7 @@ const loadingElement = document.getElementById('loading');
 const errorElement = document.getElementById('error');
 const providerFilter = document.getElementById('provider-filter');
 let allLaunches = [];
+let countdownIntervalId = null;
 
 // Fetch launches from API
 async function fetchLaunches() {
@@ -50,7 +51,11 @@ function displayLaunches(launches) {
     
     // Start countdown timers
     updateCountdowns();
-    setInterval(updateCountdowns, 1000);
+    // Clear any existing interval before starting a new one
+    if (countdownIntervalId !== null) {
+        clearInterval(countdownIntervalId);
+    }
+    countdownIntervalId = setInterval(updateCountdowns, 1000);
 }
 
 // Render launches to the grid
