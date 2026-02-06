@@ -71,6 +71,7 @@ function renderLaunches(launches) {
 function createLaunchCard(launch) {
     const card = document.createElement('div');
     card.className = 'launch-card';
+    card.setAttribute('data-mission-uid', launch.id);
     
     const imageUrl = launch.image || 'https://via.placeholder.com/400x200/1a1a3a/6495ED?text=🚀+Launch';
     const provider = launch.launch_service_provider?.name || 'Unknown Provider';
@@ -129,6 +130,8 @@ function createLaunchCard(launch) {
             </div>
         </div>
     `;
+    
+    card.onclick = () => DetailsPanelManager.reveal(launch.id);
     
     return card;
 }
@@ -213,20 +216,251 @@ function showError() {
 }
 
 // Filter event listener
-providerFilter.addEventListener('change', (e) => {
-    const selected = e.target.value;
-    
-    if (selected === 'all') {
-        renderLaunches(allLaunches);
-        updateCountdowns();
-    } else {
-        const filtered = allLaunches.filter(
-            launch => launch.launch_service_provider?.name === selected
-        );
-        renderLaunches(filtered);
-        updateCountdowns();
-    }
-});
+if (providerFilter) {
+    providerFilter.addEventListener('change', (e) => {
+        const selected = e.target.value;
+        
+        if (selected === 'all') {
+            renderLaunches(allLaunches);
+            updateCountdowns();
+        } else {
+            const filtered = allLaunches.filter(
+                launch => launch.launch_service_provider?.name === selected
+            );
+            renderLaunches(filtered);
+            updateCountdowns();
+        }
+    });
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', fetchLaunches);
+
+// Details Panel Manager - handles modal display and interactions
+const DetailsPanelManager = {
+    overlayElement: null,
+    panelElement: null,
+    contentArea: null,
+    dismissButton: null,
+    activeTimerRef: null,
+    
+    initialize() {
+        this.overlayElement = document.getElementById('launch-modal');
+        this.panelElement = this.overlayElement?.querySelector('.modal-container');
+        this.contentArea = document.getElementById('modal-content');
+        this.dismissButton = this.overlayElement?.querySelector('.modal-close');
+        
+        if (this.dismissButton) {
+            this.dismissButton.onclick = () => this.dismiss();
+        }
+        
+        if (this.overlayElement) {
+            const backdrop = this.overlayElement.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.onclick = () => this.dismiss();
+            }
+        }
+        
+        document.addEventListener('keydown', (evt) => {
+            if (evt.key === 'Escape' && this.overlayElement?.style.display !== 'none') {
+                this.dismiss();
+            }
+        });
+    },
+    
+    reveal(missionUid) {
+        const missionData = allLaunches.find(item => item.id === missionUid);
+        if (!missionData) return;
+        
+        this.populateContent(missionData);
+        this.overlayElement.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        this.activeTimerRef = setInterval(() => this.refreshTimer(missionData.net), 1000);
+        this.refreshTimer(missionData.net);
+    },
+    
+    dismiss() {
+        this.overlayElement.style.display = 'none';
+        document.body.style.overflow = '';
+        if (this.activeTimerRef) {
+            clearInterval(this.activeTimerRef);
+            this.activeTimerRef = null;
+        }
+    },
+    
+    populateContent(missionData) {
+        const sections = [];
+        
+        const headerImg = missionData.image || 'https://via.placeholder.com/900x350/1a1a3a/6495ED?text=🚀+Mission';
+        sections.push(`<img src="${headerImg}" alt="${missionData.name}" class="modal-header-image" onerror="this.src='https://via.placeholder.com/900x350/1a1a3a/6495ED?text=🚀+Mission'">`);
+        
+        sections.push(`<h2 class="modal-title">${missionData.name}</h2>`);
+        
+        const agencyData = missionData.launch_service_provider;
+        if (agencyData?.name) {
+            const logoHtml = agencyData.logo_url 
+                ? `<img src="${agencyData.logo_url}" class="modal-provider-logo" alt="${agencyData.name} logo" onerror="this.style.display='none'">` 
+                : '';
+            sections.push(`<div class="modal-provider">${logoHtml}${agencyData.name}</div>`);
+        }
+        
+        if (missionData.mission?.description) {
+            sections.push(this.buildSection('📝 Mission Overview', missionData.mission.description));
+        }
+        
+        const detailsData = [];
+        if (missionData.mission?.type) {
+            detailsData.push({ title: 'Mission Type', content: missionData.mission.type });
+        }
+        if (missionData.mission?.orbit?.name) {
+            detailsData.push({ title: 'Target Orbit', content: missionData.mission.orbit.name });
+        }
+        if (missionData.window_start) {
+            detailsData.push({ title: 'Window Opens', content: this.formatTimeString(missionData.window_start) });
+        }
+        if (missionData.window_end) {
+            detailsData.push({ title: 'Window Closes', content: this.formatTimeString(missionData.window_end) });
+        }
+        
+        if (detailsData.length > 0) {
+            sections.push(this.buildInfoGrid('🎯 Launch Parameters', detailsData));
+        }
+        
+        const vehicleData = missionData.rocket?.configuration;
+        if (vehicleData) {
+            const rocketDetails = [];
+            if (vehicleData.full_name) {
+                rocketDetails.push({ title: 'Vehicle', content: vehicleData.full_name });
+            }
+            if (vehicleData.variant) {
+                rocketDetails.push({ title: 'Variant', content: vehicleData.variant });
+            }
+            if (vehicleData.maiden_flight) {
+                rocketDetails.push({ title: 'First Flight', content: this.formatTimeString(vehicleData.maiden_flight) });
+            }
+            if (vehicleData.successful_launches !== undefined && vehicleData.failed_launches !== undefined) {
+                const totalFlights = vehicleData.successful_launches + vehicleData.failed_launches;
+                rocketDetails.push({ 
+                    title: 'Flight Record', 
+                    content: `${vehicleData.successful_launches}/${totalFlights} successful` 
+                });
+            }
+            if (rocketDetails.length > 0) {
+                sections.push(this.buildInfoGrid('🚀 Rocket Information', rocketDetails));
+            }
+        }
+        
+        const facilityData = missionData.pad;
+        if (facilityData) {
+            const padDetails = [];
+            if (facilityData.name) {
+                padDetails.push({ title: 'Launch Pad', content: facilityData.name });
+            }
+            if (facilityData.location?.name) {
+                padDetails.push({ title: 'Facility', content: facilityData.location.name });
+            }
+            if (facilityData.latitude && facilityData.longitude) {
+                const mapsUrl = `https://www.google.com/maps?q=${facilityData.latitude},${facilityData.longitude}`;
+                padDetails.push({ 
+                    title: 'Coordinates', 
+                    content: `<a href="${mapsUrl}" target="_blank" style="color: #6495ED;">${facilityData.latitude.toFixed(4)}, ${facilityData.longitude.toFixed(4)}</a>` 
+                });
+            }
+            if (padDetails.length > 0) {
+                sections.push(this.buildInfoGrid('📍 Launch Site', padDetails));
+            }
+        }
+        
+        if (missionData.program && missionData.program.length > 0) {
+            const programList = missionData.program.map(prog => prog.name).join(', ');
+            sections.push(this.buildSection('🎓 Programs', programList));
+        }
+        
+        const resourceLinks = [];
+        if (missionData.mission?.wiki_url) {
+            resourceLinks.push({ label: '📖 Wikipedia', url: missionData.mission.wiki_url });
+        }
+        if (agencyData?.info_url) {
+            resourceLinks.push({ label: '🏢 Agency Info', url: agencyData.info_url });
+        }
+        if (missionData.vidURLs && missionData.vidURLs.length > 0) {
+            missionData.vidURLs.forEach((vid, idx) => {
+                resourceLinks.push({ label: `📺 Watch${vid.title ? ': ' + vid.title : ' ' + (idx + 1)}`, url: vid.url });
+            });
+        }
+        if (resourceLinks.length > 0) {
+            sections.push(this.buildLinksSection('🔗 External Resources', resourceLinks));
+        }
+        
+        sections.push(`<div class="modal-section"><h3 class="modal-section-title">⏱️ Countdown</h3><div class="modal-countdown" id="modal-timer-display"><div class="countdown-timer"><div class="countdown-item"><span class="countdown-value days">--</span><span class="countdown-unit">Days</span></div><div class="countdown-item"><span class="countdown-value hours">--</span><span class="countdown-unit">Hours</span></div><div class="countdown-item"><span class="countdown-value minutes">--</span><span class="countdown-unit">Min</span></div><div class="countdown-item"><span class="countdown-value seconds">--</span><span class="countdown-unit">Sec</span></div></div></div></div>`);
+        
+        this.contentArea.innerHTML = sections.join('');
+    },
+    
+    buildSection(heading, bodyText) {
+        return `<div class="modal-section"><h3 class="modal-section-title">${heading}</h3><div class="modal-section-content">${bodyText}</div></div>`;
+    },
+    
+    buildInfoGrid(heading, itemsArray) {
+        const gridItems = itemsArray.map(item => 
+            `<div class="modal-info-item"><div class="modal-info-label">${item.title}</div><div class="modal-info-value">${item.content}</div></div>`
+        ).join('');
+        return `<div class="modal-section"><h3 class="modal-section-title">${heading}</h3><div class="modal-info-grid">${gridItems}</div></div>`;
+    },
+    
+    buildLinksSection(heading, linksArray) {
+        const linkItems = linksArray.map(link => 
+            `<a href="${link.url}" target="_blank" class="modal-link">${link.label}</a>`
+        ).join('');
+        return `<div class="modal-section"><h3 class="modal-section-title">${heading}</h3><div class="modal-links">${linkItems}</div></div>`;
+    },
+    
+    formatTimeString(isoString) {
+        const dateObj = new Date(isoString);
+        return dateObj.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZoneName: 'short'
+        });
+    },
+    
+    refreshTimer(targetTime) {
+        const timerDisplay = document.getElementById('modal-timer-display');
+        if (!timerDisplay) return;
+        
+        const targetDate = new Date(targetTime);
+        const currentDate = new Date();
+        const delta = targetDate - currentDate;
+        
+        const daysEl = timerDisplay.querySelector('.days');
+        const hoursEl = timerDisplay.querySelector('.hours');
+        const minutesEl = timerDisplay.querySelector('.minutes');
+        const secondsEl = timerDisplay.querySelector('.seconds');
+        
+        if (delta <= 0) {
+            daysEl.textContent = '00';
+            hoursEl.textContent = '00';
+            minutesEl.textContent = '00';
+            secondsEl.textContent = '00';
+            return;
+        }
+        
+        const daysRemaining = Math.floor(delta / (1000 * 60 * 60 * 24));
+        const hoursRemaining = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutesRemaining = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60));
+        const secondsRemaining = Math.floor((delta % (1000 * 60)) / 1000);
+        
+        daysEl.textContent = String(daysRemaining).padStart(2, '0');
+        hoursEl.textContent = String(hoursRemaining).padStart(2, '0');
+        minutesEl.textContent = String(minutesRemaining).padStart(2, '0');
+        secondsEl.textContent = String(secondsRemaining).padStart(2, '0');
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    DetailsPanelManager.initialize();
+});
