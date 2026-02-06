@@ -364,7 +364,7 @@ const DetailsPanelManager = {
                 const mapsUrl = `https://www.google.com/maps?q=${facilityData.latitude},${facilityData.longitude}`;
                 padDetails.push({ 
                     title: 'Coordinates', 
-                    content: `<a href="${mapsUrl}" target="_blank" style="color: #6495ED;">${facilityData.latitude.toFixed(4)}, ${facilityData.longitude.toFixed(4)}</a>` 
+                    content: `<a href="${mapsUrl}" target="_blank" class="modal-info-link">${facilityData.latitude.toFixed(4)}, ${facilityData.longitude.toFixed(4)}</a>` 
                 });
             }
             if (padDetails.length > 0) {
@@ -386,7 +386,7 @@ const DetailsPanelManager = {
         }
         if (missionData.vidURLs && missionData.vidURLs.length > 0) {
             missionData.vidURLs.forEach((vid, idx) => {
-                resourceLinks.push({ label: `📺 Watch${vid.title ? ': ' + vid.title : ' ' + (idx + 1)}`, url: vid.url });
+                resourceLinks.push({ label: `📺 Watch${vid.title ? ': ' + vid.title : ' #' + (idx + 1)}`, url: vid.url });
             });
         }
         if (resourceLinks.length > 0) {

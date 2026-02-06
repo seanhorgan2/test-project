@@ -508,6 +508,15 @@ footer p {
     font-weight: 600;
 }
 
+.modal-info-link {
+    color: #6495ED;
+    text-decoration: none;
+}
+
+.modal-info-link:hover {
+    text-decoration: underline;
+}
+
 .modal-links {
     display: flex;
     flex-wrap: wrap;
