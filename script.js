@@ -234,7 +234,7 @@ if (providerFilter) {
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', fetchLaunches);
+// Note: fetchLaunches is now called from the combined DOMContentLoaded handler below
 
 // Details Panel Manager - handles modal display and interactions
 const DetailsPanelManager = {
@@ -463,4 +463,5 @@ const DetailsPanelManager = {
 
 document.addEventListener('DOMContentLoaded', () => {
     DetailsPanelManager.initialize();
+    fetchLaunches();
 });
