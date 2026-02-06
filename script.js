@@ -131,7 +131,14 @@ function createLaunchCard(launch) {
         </div>
     `;
     
-    card.onclick = () => DetailsPanelManager.reveal(launch.id);
+    card.onclick = () => {
+        // Ensure DetailsPanelManager is initialized before attempting to reveal
+        if (!DetailsPanelManager.overlayElement || !DetailsPanelManager.contentArea) {
+            console.log('Re-initializing DetailsPanelManager...');
+            DetailsPanelManager.initialize();
+        }
+        DetailsPanelManager.reveal(launch.id);
+    };
     
     return card;
 }
@@ -249,6 +256,11 @@ const DetailsPanelManager = {
         this.panelElement = this.overlayElement?.querySelector('.modal-container');
         this.contentArea = document.getElementById('modal-content');
         this.dismissButton = this.overlayElement?.querySelector('.modal-close');
+        
+        // Add debugging
+        console.log('DetailsPanelManager.initialize() called');
+        console.log('Modal element found:', !!this.overlayElement);
+        console.log('Content area found:', !!this.contentArea);
         
         // Validate critical elements
         if (!this.overlayElement) {
