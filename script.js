@@ -250,6 +250,14 @@ const DetailsPanelManager = {
         this.contentArea = document.getElementById('modal-content');
         this.dismissButton = this.overlayElement?.querySelector('.modal-close');
         
+        // Validate critical elements
+        if (!this.overlayElement) {
+            console.warn('DetailsPanelManager: launch-modal element not found');
+        }
+        if (!this.contentArea) {
+            console.warn('DetailsPanelManager: modal-content element not found');
+        }
+        
         if (this.dismissButton) {
             this.dismissButton.onclick = () => this.dismiss();
         }
@@ -270,7 +278,24 @@ const DetailsPanelManager = {
     
     reveal(missionUid) {
         const missionData = allLaunches.find(item => item.id === missionUid);
-        if (!missionData) return;
+        if (!missionData) {
+            console.error('DetailsPanelManager: Mission data not found for ID:', missionUid);
+            return;
+        }
+        
+        // Defensive check: validate elements exist before proceeding
+        if (!this.overlayElement || !this.contentArea) {
+            console.warn('DetailsPanelManager: Modal elements not initialized, attempting re-initialization');
+            this.initialize();
+            
+            // Check again after re-initialization
+            if (!this.overlayElement || !this.contentArea) {
+                console.error('DetailsPanelManager: Failed to initialize modal elements');
+                return;
+            }
+        }
+        
+        console.log('DetailsPanelManager: Opening modal for mission:', missionData.name);
         
         this.populateContent(missionData);
         this.overlayElement.style.display = 'flex';
@@ -281,6 +306,11 @@ const DetailsPanelManager = {
     },
     
     dismiss() {
+        if (!this.overlayElement) {
+            console.warn('DetailsPanelManager: Cannot dismiss modal, overlayElement not found');
+            return;
+        }
+        
         this.overlayElement.style.display = 'none';
         document.body.style.overflow = '';
         if (this.activeTimerRef) {
